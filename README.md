@@ -52,10 +52,6 @@ These technologies collectively enable various functionalities within the VivaVo
 5. **Answer Questions**: Students can answer questions using text input or speech-to-text.
 6. **Submit Answers**: Submit the answers once completed to receive instant feedback and scores.
 
-## Contributors
-
-- [Your Name](https://github.com/yourusername)
-- [Collaborator Name](https://github.com/collaboratorusername)
 
 ## License
 
