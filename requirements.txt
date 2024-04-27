@@ -98,3 +98,5 @@ vertexai==1.48.0
 watchdog==4.0.0
 Werkzeug==3.0.2
 xyzservices==2024.4.0
+functions-framework==3.*
+google-cloud-aiplatform
