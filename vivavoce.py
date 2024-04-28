@@ -11,15 +11,7 @@ import base64
 
 
 firebaseConfig = {
-    'apiKey': "AIzaSyB7GtWAUEhYG4xM9M3gIFxLVktMH593f68",
-    'authDomain': "viva-voce-420906.firebaseapp.com",
-    'projectId': "viva-voce-420906",
-    'storageBucket': "viva-voce-42090<https://viva-voce-420906.appspot.com",
-    'messagingSenderId': "1009602642613",
-    'appId': "1:1009602642613:web:9229b4a24b5a4d14e2f4fc",
-    'measurementId': "G-EYLB2EVLH7",
-    'storageBucket': "viva-voce-420906.appspot.com",
-    "databaseURL":'https://viva-voce-420906-default-rtdb.firebaseio.com'
+   
 }
 
 firebase = pyrebase.initialize_app(firebaseConfig)
