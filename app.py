@@ -2,15 +2,23 @@ import streamlit as st
 import pyrebase
 from vertexai.generative_models import GenerativeModel, HarmCategory, HarmBlockThreshold
 import uuid,vertexai
-import pyperclip
+#import pyperclip
 import json
 from streamlit_mic_recorder import mic_recorder,speech_to_text
 from gtts import gTTS
 from tempfile import TemporaryFile
 import base64
+import re
 
 
 firebaseConfig = {
+
+
+
+
+
+
+
    
 }
 
@@ -75,8 +83,8 @@ def write_test_to_database(user,test_name, num_questions, question_inputs, answe
     try:
         db.child("tests").child(test_id).set(test_data)
         st.success(f"Test created with ID: {test_id}")
-        pyperclip.copy(test_id)
-        st.success("Test ID copied to clipboard")
+        #pyperclip.copy(test_id)
+        #st.success("Test ID copied to clipboard")
         db.child("teachers").child(user['localId']).child("tests_created").push(test_id)
     except Exception as e:
         st.error(f"An error occurred: {e}")
@@ -107,6 +115,56 @@ def teacher_dashboard(user):
     if submit_button:
         write_test_to_database(user,test_name, num_questions, questions, answers)
 
+    
+
+    # but = st.button("Check Student Marks")
+    # if but:
+    #     check_student_marks(user)
+    check_student_marks(user)
+
+
+def check_student_marks(user):
+    teacher_id = user['localId']
+    
+    # Fetch tests created by the teacher
+    teacher_tests = db.child("teachers").child(teacher_id).child("tests_created").get().val()
+    st.title("Tests Created")
+    if teacher_tests:
+        
+        test_options = {}
+        
+        # Display a selection menu for tests created by the teacher
+        for test_key in teacher_tests:
+            test_id = teacher_tests[test_key]
+            test_data = db.child("tests").child(test_id).get().val()
+            
+            if test_data:
+                test_name = test_data.get("test_name", "Unknown Test")
+                st.write(f"Test Name: {test_name}, Test ID: {test_id}")
+                test_options[test_name] = test_id
+        st.title("View Student Report")
+        selected_test = st.selectbox("Select a test:", list(test_options.keys()))
+        selected_test_id = test_options[selected_test]
+        #st.write(selected_test_id)
+        
+        # Fetch students' marks for the selected test
+        students = db.child("students").get().val()
+        c = 0
+        if students:
+            st.write("Student's Marks:")
+            for student_id, student_data in students.items():
+                #st.write(student_data)
+                if "tests_taken" in student_data and selected_test_id in student_data["tests_taken"]:
+                    marks_obtained = student_data["tests_taken"][selected_test_id].get("Total_marks_obtained", 0)
+                    student_name = student_data.get('name', 'Unknown')
+                    st.write(f"Student: {student_name}, Marks: {marks_obtained}")
+                    c = c+1
+
+        else:
+            st.warning("No students found.")
+    else:
+        st.warning("No tests created by this teacher.")
+
 def handle_exam(exam_code,user):
     # Retrieve test data based on the exam code
     test_data = db.child("tests").child(exam_code).get().val()
@@ -115,9 +173,9 @@ def handle_exam(exam_code,user):
     # li = test_data["questions"]
 
     if test_data:
-        st.success("Examination started successfully!")
+        #st.success("Examination started successfully!")
         st.write("Answer the following questions:")
-
+        
         # Dictionary to store student answers
         student_answers = {}
 
@@ -131,28 +189,27 @@ def handle_exam(exam_code,user):
                 try:
                         tts = gTTS(f"Question {i+1}: {question_text}", slow=False)
                         tts.save("audio.mp3")
+                        file = "./audio.mp3"
+                        st.audio(file, format='audio/mp3')
 
                         # Read the audio file and convert it to base64
-                        with open("audio.mp3", "rb") as audio_file:
-                            audio_bytes = base64.b64encode(audio_file.read()).decode("utf-8")
+                        # with open("audio.mp3", "rb") as audio_file:
+                        #     audio_bytes = base64.b64encode(audio_file.read()).decode("utf-8")
 
-                        # Embed the audio player in HTML format with autoplay
-                        audio_html = f'<audio src="data:audio/mp3;base64,{audio_bytes}" autoplay controls>'
-                        st.write(f"Question {i+1}: {question_text}")
-                        st.write(audio_html, unsafe_allow_html=True)
+                        # # Embed the audio player in HTML format with autoplay
+                        # audio_html = f'<audio src="data:audio/mp3;base64,{audio_bytes}" >'
+                        
+                        # st.write(audio_html, unsafe_allow_html=True)
                 except:
                     st.write(":smile:")
                 state.text_received=[]
-                c1,c2=st.columns(2)
-                with c1:
-                    text = st.text_area(f"Your Answer for Question {i+1}")
-                with c2:
-                    text=speech_to_text(language='en',use_container_width=True,just_once=True,key=f'STT{i}')
-                    if text:
-                        state.text_received.append(text)
+                
+                text=speech_to_text(language='en',use_container_width=True,just_once=True,key=f'STT{i}')
+                if text:
+                    state.text_received.append(text)
 
-                    for text in state.text_received:
-                        st.write(text)
+                for text in state.text_received:
+                    st.write(text)
 
                 student_answers[question_text] = (text, correct_answer)
                 #st.write(text)
@@ -228,14 +285,15 @@ def handle_exam(exam_code,user):
                     try:
                         tts = gTTS(speech_text, slow=False)
                         tts.save("audio.mp3")
-
+                        file = "./audio.mp3"
+                        st.audio(file, format='audio/mp3')
                         # Read the generated audio file and convert it to base64
-                        with open("audio.mp3", "rb") as audio_file:
-                            audio_bytes = base64.b64encode(audio_file.read()).decode("utf-8")
+                        # with open("audio.mp3", "rb") as audio_file:
+                        #     audio_bytes = base64.b64encode(audio_file.read()).decode("utf-8")
 
-                        # Embed the audio player in HTML format with autoplay
-                        audio_html = f'<audio src="data:audio/mp3;base64,{audio_bytes}" autoplay controls>'
-                        st.write(audio_html, unsafe_allow_html=True)
+                        # # Embed the audio player in HTML format with autoplay
+                        # audio_html = f'<audio src="data:audio/mp3;base64,{audio_bytes}" >'
+                        # st.write(audio_html, unsafe_allow_html=True)
                     except:
                         st.write(":smile:")
                 st.title(f"Total Marks: {total_marks}")
@@ -253,25 +311,72 @@ def handle_exam(exam_code,user):
     else:
         st.error("Invalid examination code. Please try again.")
 
+def fetch_previous_exams(user):
+            student_id = user['localId']
+            student_data = db.child("students").child(student_id).get().val()
 
+            if student_data and "tests_taken" in student_data:
+                exams_taken = student_data["tests_taken"]
+                if exams_taken:
+                    st.write("Previous Exams:")
+                    for test_id, exam_info in exams_taken.items():
+                        if isinstance(exam_info, dict):
+                            marks_obtained = exam_info.get("Total_marks_obtained", 0)
+                            test_data = db.child("tests").child(test_id).get().val()
+                            if test_data:
+                                test_name = test_data.get("test_name", "Unknown Test")
+                                st.write(f"Test Name: {test_name}, Marks Obtained: {marks_obtained}")
+                            else:
+                                st.warning("No exams taken yet.")
 def student_dashboard(user):
     
     try:
         st.title("Student Dashboard")
-        st.write("Welcome to the Student Dashboard!")
+        st.write(f"Welcome to the Student Dashboard {user['email']}!")
 
         st.subheader("Enter Examination Code")
+        tts = gTTS("Enter Examination Code and press Enter key to start the exam:", slow=False)
+        tts.save("audio.mp3")
+        file = "./audio.mp3"
+        st.audio(file, format='audio/mp3')
+        # with open("audio.mp3", "rb") as audio_file:
+        #     audio_bytes = base64.b64encode(audio_file.read()).decode("utf-8")
+
+        # # Embed the audio player in HTML format with autoplay
+        # audio_html = f'<audio src="data:audio/mp3;base64,{audio_bytes}" autoplay controls >'
+        
+        # st.write(audio_html, unsafe_allow_html=True)
         exam_code = st.text_input("Enter the examination code:")
-        st.button("Start/Restart Examination", on_click=handle_exam(exam_code,user))  
+        handle_exam(exam_code,user)
+
+        
+        st.title("Previous results")
+        fetch_previous_exams(user)
     except Exception as e:
         st.write(e)
 
+def is_valid_password(password):
+    """Validate password complexity: minimum 8 characters, at least one special character, and one number."""
+    if len(password) < 8:
+        return False
+    if not re.search("[!@#$%^&*()_+{}[\]:;<>,.?~]", password):
+        return False
+    if not re.search("[0-9]", password):
+        return False
+    return True
+
 def teacher_signup():
     st.title("Teacher Signup")
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
     name = st.text_input("Name")
+    email = st.text_input("Email")
+    password = st.text_input("Password - *must be at least 8 characters long and contain at least one special character and one number.", type="password")    
+    
+    
     if st.button("Signup"):
+        if not is_valid_password(password):
+            st.warning("Password must be at least 8 characters long and contain at least one special character and one number.")
+            return
+        
         try:
             user = auth.create_user_with_email_and_password(email, password)
             db.child("teachers").child(user['localId']).set({"email": email, "name": name})
@@ -283,10 +388,16 @@ def teacher_signup():
 
 def student_signup():
     st.title("Student Signup")
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
     name = st.text_input("Name")
+    email = st.text_input("Email")
+    password = st.text_input("Password - *must be at least 8 characters long and contain at least one special character and one number.", type="password")
+    
+    
     if st.button("Signup"):
+        if not is_valid_password(password):
+            st.warning("Password must be at least 8 characters long and contain at least one special character and one number.")
+            return
+        
         try:
             user = auth.create_user_with_email_and_password(email, password)
             db.child("students").child(user['localId']).set({"email": email, "name": name})
@@ -294,23 +405,30 @@ def student_signup():
             st.session_state["user"] = user 
             student_dashboard(st.session_state["user"])
         except Exception as e:
-            st.error(f"Error signing up: {e}",)    
+            st.error(f"Error signing up: {e}")   
 
 def main():
-    st.sidebar.title("Navigation")
+    
     st.markdown(
         """
         <div style="display: flex; justify-content: center;">
-            <h1 style="color: yellow; font-size: 3em;">VivaVoce <span style="font-size: 1.5em;">🎤</span></h1>
+            <h1 style="color: yellow; font-size: 3em;">MyAnswer<span style="font-size: 1.5em;">🎤</span></h1>
         </div>
         """,
         unsafe_allow_html=True
 )
-    st.write("VivaVoce is a web application designed to facilitate remote examinations and assessments.")
-    st.write("It allows teachers to create tests, manage questions, and review student submissions.")
-    st.write("Students can participate in exams, answer questions, and receive instant feedback.")
-    
-    page = st.sidebar.radio("", ["Teacher Login", "Student Login","Teacher Signup","Student Signup"])
+    st.sidebar.title("My Answer")
+    st.sidebar.write("My Answer is a web application designed to facilitate remote examinations and assessments.")
+    st.sidebar.write("It allows teachers to create tests, manage questions, and review student submissions.")
+    st.sidebar.write("Students can participate in exams, answer questions, and receive instant feedback.")
+    st.sidebar.title("Navigation")
+    options = ["Student Signup", "Teacher Login", "Student Login", "Teacher Signup"]
+
+# Set default selection to "Student Signup"
+    default_option = options[0]
+
+# Create radio buttons in the sidebar
+    page = st.sidebar.radio("Choose an Option", options, index=0, format_func=lambda x: x)  # Set index to 0 for default selection
     if page == "Teacher Login" and "user" not in st.session_state:
         st.sidebar.title("Teacher Login")
         email = st.sidebar.text_input("Email")
@@ -363,6 +481,7 @@ def main():
             st.sidebar.success("You have been signed out.")
             
         except Exception as e:
-            st.sidebar.error("User not logged in.")
+            st.sidebar.error("User not logged in.") 
 if __name__ == "__main__":
     main()
+
