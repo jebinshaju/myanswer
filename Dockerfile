@@ -22,4 +22,4 @@ COPY vivavoce.py /app/vivavoce.py
 
 # Set the working directory and specify the entry point
 WORKDIR /app
-ENTRYPOINT ["streamlit", "run", "vivavoce.py", "--server.port=8080", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]
