@@ -142,6 +142,10 @@ Follow these steps to deploy the application on Google Cloud Run:
 5. **Answer Questions**: Students can answer questions using text input or speech-to-text.
 6. **Submit Answers**: Submit the answers once completed to receive instant feedback and scores.
 
+# Live Site
+
+The application is live and accessible at: [MyAnswer Live Site](https://myanswer-w67ctr3rca-el.a.run.app/)
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
